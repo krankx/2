@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Varuosad</title>
+    <style>
+        body {
+            font-family: Arial;
+            margin: 20px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 10px;
+        }
+        td, th {
+            border: 1px solid #999;
+            padding: 5px;
+        }
+        th {
+            background: #ddd;
+            cursor: pointer;
+        }
+        input {
+            padding: 5px;
+            margin-right: 5px;
+        }
+        button {
+            padding: 5px 10px;
+            margin-right: 5px;
+        }
+        #lehed {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Varuosade nimekiri</h1>
+
+<div>
+    <input id="nimi" placeholder="nimi">
+    <input id="sn" placeholder="seerianumber">
+    <button onclick="otsi()">Otsi</button>
+    <button onclick="lahtesta()">Lähtesta</button>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th onclick="jarjesta('id')">Nr</th>
+            <th onclick="jarjesta('sn')">Seerianumber</th>
+            <th onclick="jarjesta('name')">Nimetus</th>
+            <th onclick="jarjesta('brand')">Mark</th>
+            <th onclick="jarjesta('priceNet')">Netohind</th>
+            <th onclick="jarjesta('priceGross')">Brutohind</th>
+        </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+</table>
+
+<div id="lehed">
+    <button onclick="eelmine()">&lt; Eelmine</button>
+    <span id="info"></span>
+    <button onclick="jargmine()">Järgmine &gt;</button>
+</div>
+
+<script>
+    // praegune olek
+    var leht = 1;
+    var jarjestus = '';
+    var nimiOtsing = '';
+    var snOtsing = '';
+
+    // küsime serverilt andmed
+    function lae() {
+        var url = '/spare-parts?page=' + leht;
+        if (nimiOtsing) url = url + '&name=' + encodeURIComponent(nimiOtsing);
+        if (snOtsing) url = url + '&sn=' + encodeURIComponent(snOtsing);
+        if (jarjestus) url = url + '&sort=' + jarjestus;
+
+        fetch(url)
+            .then(function(r) { return r.json(); })
+            .then(function(d) { naita(d); });
+    }
+
+    // näitame andmed tabelis
+    function naita(d) {
+        var tbody = document.getElementById('tbody');
+        tbody.innerHTML = '';
+
+        if (d.data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6">midagi ei leitud</td></tr>';
+        } else {
+            for (var i = 0; i < d.data.length; i++) {
+                var p = d.data[i];
+                var tr = '<tr>' +
+                    '<td>' + p.id + '</td>' +
+                    '<td>' + p.sn + '</td>' +
+                    '<td>' + p.name + '</td>' +
+                    '<td>' + p.brand + '</td>' +
+                    '<td>' + p.priceNet.toFixed(2) + ' €</td>' +
+                    '<td>' + p.priceGross.toFixed(2) + ' €</td>' +
+                    '</tr>';
+                tbody.innerHTML = tbody.innerHTML + tr;
+            }
+        }
+
+        document.getElementById('info').innerHTML =
+            ' lehekülg ' + d.page + ' / ' + d.totalPages +
+            ' (kokku ' + d.total + ') ';
+    }
+
+    function otsi() {
+        nimiOtsing = document.getElementById('nimi').value;
+        snOtsing = document.getElementById('sn').value;
+        leht = 1;
+        lae();
+    }
+
+    function lahtesta() {
+        document.getElementById('nimi').value = '';
+        document.getElementById('sn').value = '';
+        nimiOtsing = '';
+        snOtsing = '';
+        jarjestus = '';
+        leht = 1;
+        lae();
+    }
+
+    function jarjesta(veerg) {
+        // kui sama veerg — muudame suunda
+        if (jarjestus === veerg) {
+            jarjestus = '-' + veerg;
+        } else {
+            jarjestus = veerg;
+        }
+        leht = 1;
+        lae();
+    }
+
+    function eelmine() {
+        if (leht > 1) {
+            leht = leht - 1;
+            lae();
+        }
+    }
+
+    function jargmine() {
+        leht = leht + 1;
+        lae();
+    }
+
+    // lehe avamisel laeme kohe andmed
+    lae();
+</script>
+
+</body>
+</html>

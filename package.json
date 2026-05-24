@@ -1,0 +1,6 @@
+{
+  "name": "hajandus",
+  "scripts": {
+    "start": "bun index.js"
+  }
+}
